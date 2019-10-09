@@ -1,41 +1,55 @@
+// Dependencies
 var friends = require('../data/friends.js');
 
-module.exports = function (app) {
+// Export the function
+module.exports = function(app) {
 
-    app.get('/api/friends', function(req, res){
+    // Sets the get for the api/friends route
+    app.get('/api/friends', function(req, res) {
         res.json(friends);
     });
-    app.post('/api/friends', function (req, res){
-        var bestMatch = {
-            name: "",
-            photo: "",
-            friendDifference: 1000
-        };
 
-        var userData = req.body;
-        var userScores = userData.userScores;
-        var userName = userData.name;
-        var userPhoto = userData.photo;
+    // Set the post for the api/friends route
+    app.post('/api/friends', function(req, res) {
+    
+        var difference = 40;
+        var matchName = '';
+        var matchPhoto = '';
 
-        var totalDifference = 0;
+        // For-each loop to go through the data in friends.js to find a match
+        friends.forEach(function(friend) {
+        		// Variables for comparing matches
+            var matchedScoresArr = [];
+            var totalDifference = 40;
 
-        for(var i = 0; i < friends.length - 1; i++) {
-            console.log(friends[i].name);
-            totalDifference = 0;
-
-            for (var j = 0; j < 10; j++) {
-                totalDifference += Math.abs(parseInt(userScores[j]) - parseInt(friends[i].scores[j]));
-
-                if (totalDifference <= bestMatch.friendDifference) {
-                    bestMatch.name = friends[i].name;
-                    bestMatch.photo = friends[i].photo;
-                    bestMatch.friendDifference = totalDifference;
-                }
+            // Function to assist in the addition reduce() below
+            function add(total, num) {
+                return total + num;
             }
-        }
 
-        friends.push(userData);
+            for (var i = 0; i < friend.scores.length; i++) {
+                matchedScoresArr.push(Math.abs(parseInt(req.body.scores[i]) - parseInt(friend.scores[i])));
 
-        res.json(bestMatch);
+            }
+
+            // This reduces the matched scores array into a single value in a variable
+            totalDifference = matchedScoresArr.reduce(add, 0);
+
+          
+            if (totalDifference < difference) {
+                difference = totalDifference;
+                matchName = friend.name;
+                matchPhoto = friend.photo;
+            }
+        });
+        
+        res.json({
+            name: matchName,
+            photo: matchPhoto
+        });
+
+        // This adds new user data object to friends json
+        friends.push(req.body);
+        res.json(true)
     });
 }
